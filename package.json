@@ -7,6 +7,6 @@
     "start": "node local-server.cjs"
   },
   "engines": {
-    "node": ">=20"
+    "node": "22.x"
   }
 }
