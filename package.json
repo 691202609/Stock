@@ -1,0 +1,12 @@
+{
+  "name": "stock-lift-research",
+  "version": "6.3.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/*.test.cjs",
+    "start": "node local-server.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

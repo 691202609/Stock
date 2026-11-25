@@ -1,0 +1,13 @@
+const test=require('node:test'),assert=require('node:assert/strict'),csv=require('../public/csv.js'),analytics=require('../public/analytics.js'),strategy=require('../public/strategy.js');const head='time,open,high,low,close,volume\n';
+test('CSV sorted and numeric',()=>{const c=csv.parse(head+'2024-01-02,2,3,1,2,0\n2024-01-01,1,2,1,2,5');assert.equal(c[0].close,2);assert.ok(c[0].time<c[1].time)});
+test('reject invalid OHLC, date, duplicate and formula',()=>{for(const s of ['2024-01-01,4,3,1,2,0','2024-02-30,2,3,1,2,0','2024-01-01,2,3,1,2,0\n2024-01-01,2,3,1,2,0','2024-01-01,=1,3,1,2,0'])assert.throws(()=>csv.parse(head+s));});
+test('weekly aggregation',()=>{const c=csv.parse(head+'2024-01-01,2,3,1,2,4\n2024-01-02,2,4,2,3,5');assert.deepEqual(csv.aggregate(c,'1wk'),[{time:c[0].time,open:2,high:4,low:1,close:3,volume:9}]);});
+test('monthly aggregation',()=>{const c=csv.parse(head+'2024-01-01,2,3,1,2,4\n2024-02-02,2,4,2,3,5');assert.equal(csv.aggregate(c,'1mo').length,2);});
+test('symbol validation',()=>{assert.equal(csv.symbol('ptt.bk'),'PTT.BK');assert.throws(()=>csv.symbol('<script>'));});
+const c=Array.from({length:260},(_,i)=>({time:1704067200+i*86400,open:100+i,high:101+i,low:99+i,close:100+i,volume:1000}));
+test('reject legacy demo data',()=>{assert.throws(()=>csv.quote({symbol:'DEMO',currency:'THB',candles:c,demo:true}));assert.throws(()=>csv.symbol('DEMO'));});
+test('indicators retained',()=>{const a=analytics.analyze(c);assert.equal(a.rsi,100);assert.equal(a.atr,2);assert.equal(a.drawdown,0);});
+test('strategy retained',()=>assert.ok(strategy.backtest(c).returnPct>0));
+test('config rejects secret key',async()=>{const {onRequestGet}=await import('../functions/api/config.js');assert.equal((await onRequestGet({env:{SUPABASE_URL:'https://abc.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_secret_abc'}}).json()).key,'');});
+test('config accepts public key',async()=>{const {onRequestGet}=await import('../functions/api/config.js');assert.equal((await onRequestGet({env:{SUPABASE_URL:'https://abc.supabase.co',SUPABASE_PUBLISHABLE_KEY:'sb_publishable_abc'}}).json()).key,'sb_publishable_abc');});
+test('health free mode',async()=>{const {onRequestGet}=await import('../functions/api/health.js');assert.equal((await onRequestGet().json()).paidServices,false);});

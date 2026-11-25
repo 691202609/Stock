@@ -1,0 +1,5 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+function call(route,method='GET'){const result={headers:{},statusCode:0,body:null};const res={setHeader(k,v){result.headers[k]=v},status(v){result.statusCode=v;return this},json(v){result.body=v;return this}};return require('../api/'+route+'.js')({method},res).then(()=>result)}
+test('Vercel health GET',async()=>{const r=await call('health');assert.equal(r.statusCode,200);assert.equal(r.body.paidServices,false);assert.equal(r.headers['Cache-Control'],'no-store')});
+test('Vercel config hides secret',async()=>{process.env.SUPABASE_URL='https://abc.supabase.co';process.env.SUPABASE_PUBLISHABLE_KEY='sb_secret_test';assert.equal((await call('config')).body.key,'');process.env.SUPABASE_PUBLISHABLE_KEY='sb_publishable_test';assert.equal((await call('config')).body.key,'sb_publishable_test');delete process.env.SUPABASE_URL;delete process.env.SUPABASE_PUBLISHABLE_KEY;});
+test('Vercel routes reject POST',async()=>{for(const route of ['config','health'])assert.equal((await call(route,'POST')).statusCode,405)});

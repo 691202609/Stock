@@ -1,0 +1,152 @@
+
+> stock-lift-research@6.3.0 test
+> node --test test/*.test.cjs
+
+TAP version 13
+# Subtest: CSV sorted and numeric
+ok 1 - CSV sorted and numeric
+  ---
+  duration_ms: 2.076567
+  type: 'test'
+  ...
+# Subtest: reject invalid OHLC, date, duplicate and formula
+ok 2 - reject invalid OHLC, date, duplicate and formula
+  ---
+  duration_ms: 0.490508
+  type: 'test'
+  ...
+# Subtest: weekly aggregation
+ok 3 - weekly aggregation
+  ---
+  duration_ms: 3.699282
+  type: 'test'
+  ...
+# Subtest: monthly aggregation
+ok 4 - monthly aggregation
+  ---
+  duration_ms: 0.290297
+  type: 'test'
+  ...
+# Subtest: symbol validation
+ok 5 - symbol validation
+  ---
+  duration_ms: 0.647726
+  type: 'test'
+  ...
+# Subtest: reject legacy demo data
+ok 6 - reject legacy demo data
+  ---
+  duration_ms: 0.327534
+  type: 'test'
+  ...
+# Subtest: indicators retained
+ok 7 - indicators retained
+  ---
+  duration_ms: 1.976778
+  type: 'test'
+  ...
+# Subtest: strategy retained
+ok 8 - strategy retained
+  ---
+  duration_ms: 1.883357
+  type: 'test'
+  ...
+# Subtest: config rejects secret key
+ok 9 - config rejects secret key
+  ---
+  duration_ms: 50.615875
+  type: 'test'
+  ...
+# Subtest: config accepts public key
+ok 10 - config accepts public key
+  ---
+  duration_ms: 0.875379
+  type: 'test'
+  ...
+# Subtest: health free mode
+ok 11 - health free mode
+  ---
+  duration_ms: 2.58267
+  type: 'test'
+  ...
+# Subtest: normalizes real API shape (fixture only)
+ok 12 - normalizes real API shape (fixture only)
+  ---
+  duration_ms: 2.374997
+  type: 'test'
+  ...
+# Subtest: rejects quota, wrong ticker, demo key, invalid symbol
+ok 13 - rejects quota, wrong ticker, demo key, invalid symbol
+  ---
+  duration_ms: 0.621617
+  type: 'test'
+  ...
+# Subtest: fixed provider URL with own key, no cache
+ok 14 - fixed provider URL with own key, no cache
+  ---
+  duration_ms: 1.269812
+  type: 'test'
+  ...
+# Subtest: 404 and network failures never fabricate data
+ok 15 - 404 and network failures never fabricate data
+  ---
+  duration_ms: 1.078525
+  type: 'test'
+  ...
+# Subtest: missing config and anonymous requests fail closed
+ok 16 - missing config and anonymous requests fail closed
+  ---
+  duration_ms: 3.218939
+  type: 'test'
+  ...
+# Subtest: other account cannot consume market quota
+ok 17 - other account cannot consume market quota
+  ---
+  duration_ms: 0.649017
+  type: 'test'
+  ...
+# Subtest: owner fetch and cache without exposing key
+ok 18 - owner fetch and cache without exposing key
+  ---
+  duration_ms: 2.171691
+  type: 'test'
+  ...
+# Subtest: provider failure returns no fake prices
+ok 19 - provider failure returns no fake prices
+  ---
+  duration_ms: 3.088141
+  type: 'test'
+  ...
+# Subtest: search validates and uses only same-origin API
+ok 20 - search validates and uses only same-origin API
+  ---
+  duration_ms: 2.152231
+  type: 'test'
+  ...
+# Subtest: Vercel health GET
+ok 21 - Vercel health GET
+  ---
+  duration_ms: 39.500762
+  type: 'test'
+  ...
+# Subtest: Vercel config hides secret
+ok 22 - Vercel config hides secret
+  ---
+  duration_ms: 4.402441
+  type: 'test'
+  ...
+# Subtest: Vercel routes reject POST
+ok 23 - Vercel routes reject POST
+  ---
+  duration_ms: 0.289737
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 229.280356
