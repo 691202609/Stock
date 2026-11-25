@@ -36,9 +36,9 @@ async function fetchDaily(ticker,fetcher=fetch){
  return parse(await response.json(),ticker);
 }
 
-async function search(ticker,token,fetcher=fetch){
+async function search(ticker,fetcher=fetch){
  ticker=symbol(ticker);
- const response=await fetcher('/api/market?symbol='+encodeURIComponent(ticker),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(30000)});
+ const response=await fetcher('/api/market?symbol='+encodeURIComponent(ticker),{cache:'no-store',signal:AbortSignal.timeout(30000)});
  const data=await response.json().catch(()=>null);
  if(!response.ok)throw Error(data?.error||'HTTP '+response.status);
  if(data?.symbol!==ticker||data.source!==SOURCE||!/^[A-Z]{3}$/.test(data.currency)||!Array.isArray(data.candles)||data.candles.length>366)throw Error('ข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง');
