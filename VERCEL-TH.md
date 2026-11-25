@@ -1,9 +1,9 @@
-# Stock Lift V6.3 — One-click Search (personal research)
+# Stock Lift V6.4 — Free Daily Search (personal research)
 
 ค้นหาหุ้นสหรัฐด้วย Symbol หลังเข้าสู่ระบบครั้งเดียว ไม่ต้องกรอก API Key ในหน้าเว็บ ไม่ใช้ข้อมูล DEMO. ใช้ราคาปิดย้อนหลัง Alpha Vantage (100 วันซื้อขายโดยทั่วไป, 25 คำขอ/วันตามเงื่อนไข Free). CSV เป็นทางเลือกสำหรับหุ้นไทยและข้อมูลย้อนหลังยาวกว่า. ไม่ใช่ราคาสด. ไม่รองรับการค้นหาด้วยชื่อบริษัทหรือหุ้นไทยโดยอัตโนมัติในรุ่นนี้.
 
 ## ติดตั้ง Vercel + Supabase
-1. สร้าง Supabase Free project แล้วรัน `supabase/schema.sql` ใน SQL Editor (ถ้าเคยสร้างแล้วตรวจสอบก่อนรันซ้ำ). ตั้ง Authentication > URL Configuration ให้ตรง URL เว็บไซต์จริง.
+1. สร้าง Supabase Free project แล้วรัน `supabase/schema.sql` ใน SQL Editor (สำคัญ: แม้เคยรัน V6.3 แล้ว ต้องรัน SQL รุ่นนี้อีกครั้งเพื่อสร้างระบบโควตา ไม่ลบรายการโปรดเดิม). ตั้ง Authentication > URL Configuration ให้ตรง URL เว็บไซต์จริง.
 2. ไป Authentication > Users > Add user สร้างบัญชีส่วนตัวของเจ้าของเว็บพร้อมรหัสผ่านที่รัดกุม และยืนยันบัญชีผ่าน Dashboard. คัดลอก User UID (UUID) ของบัญชีนี้. ปิดการสมัครสมาชิกสาธารณะหากใช้เฉพาะตนเอง.
 3. ขอ API Key ฟรี https://www.alphavantage.co/support/#api-key สำหรับการใช้ส่วนตัวตามเงื่อนไข. ไม่ต้องซื้อแพ็กเกจ.
 4. อัปโหลดไฟล์ที่แตก ZIP ไป GitHub (อย่าอัปโหลด .env ที่มีค่าจริง). Import repository เข้า Vercel. Framework Other; Root directory ./; Install npm ci; Build npm test; Output public; Node 22.x.
@@ -12,7 +12,7 @@
    - SUPABASE_PUBLISHABLE_KEY = publishable หรือ legacy anon key เท่านั้น
    - ALPHA_VANTAGE_API_KEY = key ฟรีส่วนตัว (server only)
    - MARKET_OWNER_USER_ID = UUID ของบัญชีในขั้นตอน 2
-6. Deploy/Redeploy หลังตั้งค่า. เปิดเว็บและเข้าสู่ระบบด้วยบัญชีที่สร้าง. พิมพ์ AAPL แล้วกดค้นหา. หากต้องการค้นหุ้นอื่นพิมพ์ NVDA หรือ MSFT. ไม่ต้องกรอก key อีก.
+6. Deploy/Redeploy หลังตั้งค่า. เปิดเว็บและเข้าสู่ระบบด้วยบัญชีที่สร้าง. พิมพ์ IREN หรือ AAPL แล้วกดค้นหาหุ้น (ปุ่มเดียว). หากต้องการค้นหุ้นอื่นพิมพ์ NVDA หรือ MSFT. ไม่ต้องกรอก key อีก.
 7. ตรวจสอบ /api/health และ /api/config; config ต้องไม่มี Alpha Vantage key. ตรวจสอบด้วยบัญชีอื่นว่าถูกปฏิเสธ (403). เมื่อไม่ล็อกอิน API ต้องปฏิเสธ (401 เมื่อ config ครบ). CSV ใช้ได้โดยไม่ล็อกอิน.
 
 ## Local
@@ -20,6 +20,17 @@ Node 22: `npm ci`, `npm test`, `npm start`. ถ้าต้องการ env �
 
 ## ข้อจำกัด
 - Free API และ Vercel Hobby จำกัดการใช้ส่วนตัวไม่ใช่เชิงพาณิชย์: https://www.alphavantage.co/terms_of_service/ และ https://vercel.com/docs/plans/hobby. ไม่เปิด endpoint ให้สาธารณะใช้คีย์ร่วมกัน. หากจะเปิดขายต้องได้รับสิทธิ์จากผู้ให้บริการและใช้ hosting ที่อนุญาต.
-- ใช้ cache 15 นาทีเฉพาะ instance ของ server, ไม่ใช่ quota กลางหรือ persistent cache. ผู้ให้บริการเป็นผู้บังคับโควตารวม. เมื่อ API มีปัญหาจะไม่แทนข้อมูลเดิมด้วยราคาปลอม. เก็บได้ 12 symbols ในเบราว์เซอร์. EMA200 ต้องนำเข้าประวัติเพิ่ม.
+- ใช้ cache 6 ชั่วโมงทั้งใน browser และใน server instance; server fallback ได้สูงสุด 7 วันและติดป้ายข้อมูลเก่า. ไม่ใช่ persistent server cache. Supabase RPC จำกัด 25 คำขอในช่วงย้อนหลัง 24 ชั่วโมงต่อบัญชีเจ้าของเว็บ และเว้นอย่างน้อย 16 วินาทีระหว่างการเรียก upstream. ทุกความพยายามนับโควตา ไม่มี retry อัตโนมัติ. หากไม่ได้รัน SQL จะปิดการเรียก API เพื่อป้องกันการเกินโควตา. ไม่สามารถนับคำขอที่ใช้ Key จากโปรแกรมอื่นได้; Alpha Vantage เป็นผู้บังคับโควตาจริง. เมื่อ API มีปัญหาจะไม่แทนข้อมูลเดิมด้วยราคาปลอม. เก็บได้ 12 symbols ในเบราว์เซอร์. EMA200 ต้องนำเข้าประวัติเพิ่ม.
 - ไฟล์ราคาเก็บใน browser ไม่ได้ sync ขึ้น Supabase; sync เฉพาะรายการโปรด. ข้อมูล local อาจปรากฏกับคนที่ใช้ browser profile เดียวกัน.
 - ทดสอบ mock และสูตรด้วย npm test; ยังไม่ได้เชื่อมบัญชีจริงหรือ deploy จริง. ต้องทดสอบหลังตั้งค่า.
+
+## อัปเกรดจาก V6.3 / รุ่นที่มีปุ่มดึงราคาล่าสุด
+- แทนไฟล์โปรเจกต์ทั้งหมดด้วย ZIP รุ่นนี้ แล้ว push เข้า GitHub repository เดิม (ตรวจสอบว่าไม่มีไฟล์ .env ที่มี key จริง).
+- ใน Supabase SQL Editor ให้ Run `supabase/schema.sql` รุ่น 6.4 ทั้งหมดอีกครั้ง (ไม่ต้องสร้าง project ใหม่).
+- ใช้ Environment Variables เดิม 4 ค่า ไม่ต้องขอ API Key ใหม่.
+- Vercel Deploy ใหม่ ตรวจ `/api/health` ต้องได้ version 6.4.0. ถ้ายังเห็นสองปุ่ม ให้ตรวจว่า deploy จาก commit ล่าสุดแล้ว hard refresh (Ctrl+F5).
+- เข้าบัญชีเจ้าของเว็บ → พิมพ์ IREN → ค้นหาหุ้น. ราคาปิดและกราฟมาจาก TIME_SERIES_DAILY outputsize=compact เพียงคำขอเดียว ไม่เรียก GLOBAL_QUOTE, entitlement หรือ API intraday.
+- หาก 429: เว้นอย่างน้อย 16 วินาทีระหว่างหุ้นใหม่ หรือรอให้โควตาครบช่วง 24 ชั่วโมง. ถ้าเคยค้นหุ้นนั้นจะแสดงข้อมูลที่เก็บไว้พร้อมวันที่; ไม่สร้างราคาเอง.
+- หาก 503 และข้อความระบบควบคุมโควตา: รัน SQL รุ่นนี้ใน Supabase ให้สำเร็จแล้วลองใหม่.
+- หาก 401/403: ตรวจบัญชีและ MARKET_OWNER_USER_ID; 502: ตรวจ provider response / symbol.
+- โหมดนี้ไม่รองรับราคาสด และข้อมูล compact อาจไม่พอ EMA200.
