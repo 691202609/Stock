@@ -6,7 +6,6 @@ services:
     environment:
       SUPABASE_URL: ${SUPABASE_URL:-}
       SUPABASE_PUBLISHABLE_KEY: ${SUPABASE_PUBLISHABLE_KEY:-}
-      ALPHA_VANTAGE_API_KEY: ${ALPHA_VANTAGE_API_KEY:-}
       MARKET_OWNER_USER_ID: ${MARKET_OWNER_USER_ID:-}
     restart: unless-stopped
     read_only: true

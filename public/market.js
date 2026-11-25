@@ -1,8 +1,51 @@
 (function(root){'use strict';
 const CSV=typeof module!=='undefined'?require('./csv.js'):root.StockCSV;
-function input(symbol,key,currency){symbol=CSV.symbol(symbol);if(!/^[A-Za-z0-9]{8,80}$/.test(key)||key.toLowerCase()==='demo')throw Error('กรอก API Key ฟรีของคุณเอง');if(!/^[A-Z]{3}$/.test(currency))throw Error('ระบุสกุลเงิน 3 ตัว');return {symbol,key,currency};}
-function parse(data,symbol,currency){if(!data||typeof data!=='object')throw Error('ข้อมูลตอบกลับไม่ถูกต้อง');if(data.Note||data.Information)throw Object.assign(Error('Alpha Vantage จำกัดโควตาหรือไม่รองรับคำขอนี้ใน Free API · ลองใหม่ภายหลัง'),{status:429});if(data['Error Message'])throw Error('ไม่พบหุ้นหรือคำขอไม่ถูกต้อง');const meta=data['Meta Data'], rows=data['Time Series (Daily)'];if(!meta||String(meta['2. Symbol']).toUpperCase()!==symbol||!rows||typeof rows!=='object'||Object.keys(rows).length>100)throw Error('ไม่พบข้อมูลรายวันฟรีของหุ้นนี้');const csv='date,open,high,low,close,volume\n'+Object.entries(rows).map(([day,r])=>[day,r['1. open'],r['2. high'],r['3. low'],r['4. close'],r['5. volume']].join(',')).join('\n');return {symbol,currency,candles:CSV.parse(csv),source:'Alpha Vantage · ราคาปิดย้อนหลัง (ไม่ปรับ corporate actions)',fetchedAt:new Date().toISOString()};}
-async function fetchDaily(symbol,key,currency,fetcher=fetch){const v=input(symbol,key,currency);const url=new URL('https://www.alphavantage.co/query');url.search=new URLSearchParams({function:'TIME_SERIES_DAILY',symbol:v.symbol,outputsize:'compact',apikey:v.key});let r;try{r=await fetcher(url.toString(),{cache:'no-store',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(12000),redirect:'error'});}catch{throw Error('เชื่อมต่อผู้ให้บริการไม่ได้ (เครือข่าย/CORS) กรุณาลองใหม่หรือใช้ CSV');}if(!r.ok)throw Object.assign(Error('ผู้ให้บริการตอบ HTTP '+r.status+' · ลองใหม่ภายหลัง'),{status:r.status===429?429:502});let data;try{data=await r.json()}catch{throw Error('ข้อมูลจากผู้ให้บริการไม่ใช่ JSON');}return parse(data,v.symbol,v.currency);}
-function usSymbol(value){if(typeof value!=='string')throw Error('กรอก Symbol หุ้นสหรัฐ');const s=CSV.symbol(value);if(!/^[A-Z]{1,5}$/.test(s))throw Error('รองรับ Symbol หุ้นสหรัฐ 1–5 ตัวอักษร เช่น AAPL');return s;}
-async function search(symbol,token,fetcher=fetch){symbol=usSymbol(symbol);const r=await fetcher('/api/market?symbol='+encodeURIComponent(symbol),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(30000)});const d=await r.json().catch(()=>null);if(!r.ok)throw Error(d?.error||'HTTP '+r.status);if(!d||d.symbol!==symbol||d.currency!=='USD'||!Array.isArray(d.candles)||!d.candles.length||d.candles.length>100)throw Error('ข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง');const candles=CSV.parse('time,open,high,low,close,volume\n'+d.candles.map(c=>[c.time,c.open,c.high,c.low,c.close,c.volume].join(',')).join('\n'));return {...d,candles};}
-const api={input,parse,fetchDaily,usSymbol,search};if(typeof module!=='undefined')module.exports=api;else root.StockMarket=api;})(globalThis);
+const SOURCE='Yahoo Finance (อาจล่าช้า)';
+const HEADER='time,open,high,low,close,volume\n';
+
+function symbol(value){
+ if(typeof value!=='string')throw Error('กรอก Symbol เช่น IREN หรือ PTT.BK');
+ return CSV.symbol(value);
+}
+
+function parse(data,ticker){
+ const result=data?.chart?.result?.[0];
+ const meta=result?.meta;
+ const quote=result?.indicators?.quote?.[0];
+ if(meta?.symbol?.toUpperCase()!==ticker||!Array.isArray(result?.timestamp)||!quote||!/^[A-Z]{3}$/.test(meta.currency))throw Error('ไม่พบข้อมูลหุ้นจาก Yahoo Finance');
+ const dates=new Map();
+ for(const [i,time] of result.timestamp.entries()){
+  const values=['open','high','low','close'].map(key=>quote[key]?.[i]);
+  if(!Number.isFinite(time)||!values.every(Number.isFinite))continue;
+  const day=new Date(time*1000).toISOString().slice(0,10);
+  dates.set(day,[day,...values,quote.volume?.[i]??0].join(','));
+ }
+ const candles=CSV.parse(HEADER+[...dates.values()].join('\n'));
+ const price=meta.regularMarketPrice, marketTime=meta.regularMarketTime;
+ const latest=Number.isFinite(price)&&price>0&&Number.isFinite(marketTime)&&marketTime>0?{price,marketTime}:null;
+ return {symbol:ticker,currency:meta.currency,candles,latest,source:SOURCE,fetchedAt:new Date().toISOString()};
+}
+
+async function fetchDaily(ticker,fetcher=fetch){
+ ticker=symbol(ticker);
+ const url=new URL('https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker));
+ url.search=new URLSearchParams({interval:'1d',range:'1y'});
+ const response=await fetcher(url.toString(),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000),headers:{Accept:'application/json'}}).catch(()=>null);
+ if(!response)throw Error('เชื่อมต่อ Yahoo Finance ไม่ได้');
+ if(!response.ok)throw Object.assign(Error('Yahoo Finance ตอบ HTTP '+response.status),{status:response.status===429?429:502});
+ return parse(await response.json(),ticker);
+}
+
+async function search(ticker,token,fetcher=fetch){
+ ticker=symbol(ticker);
+ const response=await fetcher('/api/market?symbol='+encodeURIComponent(ticker),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(30000)});
+ const data=await response.json().catch(()=>null);
+ if(!response.ok)throw Error(data?.error||'HTTP '+response.status);
+ if(data?.symbol!==ticker||data.source!==SOURCE||!/^[A-Z]{3}$/.test(data.currency)||!Array.isArray(data.candles)||data.candles.length>366)throw Error('ข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง');
+ const candles=CSV.parse(HEADER+data.candles.map(c=>[c.time,c.open,c.high,c.low,c.close,c.volume].join(',')).join('\n'));
+ return {...data,candles};
+}
+
+const api={SOURCE,symbol,parse,fetchDaily,search};
+if(typeof module!=='undefined')module.exports=api;else root.StockMarket=api;
+})(globalThis);
