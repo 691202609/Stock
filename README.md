@@ -12,10 +12,6 @@
 
 ใช้ Node.js 22 รัน `npm test` แล้ว `npm start` จากนั้นเปิด http://localhost:3000
 
-## รายการโปรดบน Cloud
-
-ตั้งค่า SUPABASE_URL และ SUPABASE_PUBLISHABLE_KEY เฉพาะเมื่อต้องการซิงก์รายการโปรดบน Cloud และรัน `supabase/schema.sql` เพื่อสร้างตารางสำหรับโปรเจกต์ Supabase ใหม่
-
 ## ข้อมูลตลาด
 
 เซิร์ฟเวอร์แคชผลค้นหา 1 นาที หาก Yahoo Finance ขัดข้อง อาจแสดงข้อมูลสำรองพร้อมป้ายข้อมูลเก่า การค้นหาขอข้อมูลเมื่อกดปุ่ม ข้อมูลของ Yahoo Finance มีเงื่อนไขการเผยแพร่ตาม [ข้อกำหนดของแหล่งข้อมูล](https://help.yahoo.com/kb/SLN2310.html)
