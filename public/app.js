@@ -16,7 +16,8 @@ let datasets = {},
   selected = "",
   visible = 120,
   plotted = [],
-  hit = [];
+  hit = [],
+  liveTimer = null;
 function read(k, f) {
   try {
     return JSON.parse(localStorage.getItem(k) || "null") ?? f;
@@ -252,6 +253,7 @@ function render() {
     text("summary", "ยังไม่มีข้อมูลเพียงพอ");
     text("backResult", "");
     draw();
+    if (liveTimer) { clearTimeout(liveTimer); liveTimer = null; }
     return;
   }
   const c = plotted,
@@ -317,6 +319,22 @@ function render() {
       " · คำนวณตามช่วงกราฟที่เลือก",
   );
   draw();
+  if (liveTimer) clearTimeout(liveTimer);
+  liveTimer = d.source === StockMarket.SOURCE
+    ? setTimeout(() => refreshLive(d.symbol), 60000)
+    : null;
+}
+
+async function refreshLive(symbol) {
+  if (!datasets[symbol] || datasets[symbol].source !== StockMarket.SOURCE) return;
+  try {
+    const updated = await StockMarket.search(symbol);
+    saveData({ ...datasets, [symbol]: updated });
+    if (selected === symbol) refresh();
+  } catch (error) {
+    text("marketStatus", "อัปเดตล่าสุดไม่ได้: " + error.message + " · จะแสดงข้อมูลเดิม");
+    liveTimer = setTimeout(() => refreshLive(symbol), 60000);
+  }
 }
 function draw() {
   const canvas = $("chart"),
