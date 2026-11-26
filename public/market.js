@@ -28,12 +28,17 @@ function parse(data,ticker){
 
 async function fetchDaily(ticker,fetcher=fetch){
  ticker=symbol(ticker);
- const url=new URL('https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker));
- url.search=new URLSearchParams({interval:'1d',range:'1y'});
- const response=await fetcher(url.toString(),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000),headers:{Accept:'application/json'}}).catch(()=>null);
- if(!response)throw Error('เชื่อมต่อ Yahoo Finance ไม่ได้');
- if(!response.ok)throw Object.assign(Error('Yahoo Finance ตอบ HTTP '+response.status),{status:response.status===429?429:502});
- return parse(await response.json(),ticker);
+ const hosts=['query1.finance.yahoo.com','query2.finance.yahoo.com'];
+ let lastError='เชื่อมต่อ Yahoo Finance ไม่ได้';
+ for(const host of hosts){
+  const url=new URL('https://'+host+'/v8/finance/chart/'+encodeURIComponent(ticker));
+  url.search=new URLSearchParams({interval:'1d',range:'1y'});
+  const response=await fetcher(url.toString(),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000),headers:{Accept:'application/json','User-Agent':'Mozilla/5.0'}}).catch(()=>null);
+  if(!response){lastError='เชื่อมต่อ Yahoo Finance ไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ต';continue;}
+  if(!response.ok){lastError='Yahoo Finance ตอบ HTTP '+response.status;continue;}
+  try{return parse(await response.json(),ticker);}catch(error){lastError=error.message;}
+ }
+ throw Object.assign(Error(lastError),{status: lastError.includes('429') ? 429 : 502});
 }
 
 async function search(ticker,fetcher=fetch){

@@ -36,4 +36,4 @@ test('concurrent same symbol shares a single upstream call',async()=>{
 });
 test('one market submit button, no realtime premium controls',()=>{const html=require('node:fs').readFileSync(require('node:path').join(__dirname,'../public/index.html'),'utf8');const form=html.match(/<form id="marketForm"[\s\S]*?<\/form>/)[0];a.equal((form.match(/<button/g)||[]).length,1);a.match(form,/ค้นหาหุ้น/)});
 
-test('upstream HTTP 429 returns rate limit without automatic retry',async()=>{let n=0;const h=createHandler(async()=>{n++;return {ok:false,status:429}});a.equal((await call(h)).status,429);a.equal(n,1)});
+test('upstream HTTP 429 returns rate limit after trying Yahoo hosts',async()=>{let n=0;const h=createHandler(async()=>{n++;return {ok:false,status:429}});a.equal((await call(h)).status,429);a.equal(n,2)});
