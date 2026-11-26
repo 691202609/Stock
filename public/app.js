@@ -531,7 +531,7 @@ $("marketForm").onsubmit = async (e) => {
   const b = $("marketFetch");
   if (b.disabled) return;
   b.disabled = true;
-  text("marketStatus", "กำลังดึงข้อมูลจริง…");
+  text("marketStatus", "กำลังค้นหาข้อมูลจาก Yahoo Finance…");
   try {
     const symbol = StockMarket.symbol($("marketSymbol").value);
     if (!Object.hasOwn(datasets, symbol) && Object.keys(datasets).length >= 12)

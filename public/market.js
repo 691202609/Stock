@@ -12,7 +12,7 @@ function parse(data,ticker){
  const result=data?.chart?.result?.[0];
  const meta=result?.meta;
  const quote=result?.indicators?.quote?.[0];
- if(meta?.symbol?.toUpperCase()!==ticker||!Array.isArray(result?.timestamp)||!quote||!/^[A-Z]{3}$/.test(meta.currency))throw Error('ไม่พบข้อมูลหุ้นจาก Yahoo Finance');
+ if(meta?.symbol?.toUpperCase()!==ticker||!Array.isArray(result?.timestamp)||!quote||!/[A-Za-z]{3,5}/.test(String(meta.currency||'')))throw Error('ไม่พบข้อมูลหุ้นจาก Yahoo Finance');
  const dates=new Map();
  for(const [i,time] of result.timestamp.entries()){
   const values=['open','high','low','close'].map(key=>quote[key]?.[i]);
@@ -23,7 +23,7 @@ function parse(data,ticker){
  const candles=CSV.parse(HEADER+[...dates.values()].join('\n'));
  const price=meta.regularMarketPrice, marketTime=meta.regularMarketTime;
  const latest=Number.isFinite(price)&&price>0&&Number.isFinite(marketTime)&&marketTime>0?{price,marketTime}:null;
- return {symbol:ticker,currency:meta.currency,candles,latest,source:SOURCE,fetchedAt:new Date().toISOString()};
+ return {symbol:ticker,currency:String(meta.currency).toUpperCase(),candles,latest,source:SOURCE,fetchedAt:new Date().toISOString()};
 }
 
 async function fetchDaily(ticker,fetcher=fetch){
@@ -41,7 +41,7 @@ async function search(ticker,fetcher=fetch){
  const response=await fetcher('/api/market?symbol='+encodeURIComponent(ticker),{cache:'no-store',signal:AbortSignal.timeout(30000)});
  const data=await response.json().catch(()=>null);
  if(!response.ok)throw Error(data?.error||'HTTP '+response.status);
- if(data?.symbol!==ticker||data.source!==SOURCE||!/^[A-Z]{3}$/.test(data.currency)||!Array.isArray(data.candles)||data.candles.length>366)throw Error('ข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง');
+ if(data?.symbol!==ticker||data.source!==SOURCE||!/[A-Z]{3,5}/.test(String(data.currency||''))||!Array.isArray(data.candles)||data.candles.length>366)throw Error('ข้อมูลจากเซิร์ฟเวอร์ไม่ถูกต้อง');
  const candles=CSV.parse(HEADER+data.candles.map(c=>[c.time,c.open,c.high,c.low,c.close,c.volume].join(',')).join('\n'));
  return {...data,candles};
 }

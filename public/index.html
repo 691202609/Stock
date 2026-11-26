@@ -31,6 +31,8 @@
         <button id="importFocus" class="primary">+ นำเข้าข้อมูล</button>
       </div>
       <section class="panel" id="marketPanel">
+        <h2>ค้นหาหุ้นจาก Yahoo Finance</h2>
+        <p class="muted">รองรับตลาดที่ Yahoo Finance มีข้อมูล เช่น AAPL, PTT.BK, 7203.T, BTC-USD, SPY หรือ ^SET พิมพ์ Symbol แล้วกดค้นหาเพื่อดูราคาล่าสุดและกราฟย้อนหลัง 1 ปี</p>
         <form id="marketForm" class="formrow">
           <label
             >ค้นหาหุ้น
@@ -38,7 +40,7 @@
               id="marketSymbol"
               required
               maxlength="30"
-              placeholder="IREN / AAPL / PTT.BK"
+              placeholder="AAPL / PTT.BK / BTC-USD / ^SET"
               autocomplete="off" /></label
           ><button id="marketFetch" class="primary">ค้นหา</button>
         </form>        
