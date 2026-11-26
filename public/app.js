@@ -245,7 +245,7 @@ function render() {
   $("metrics").replaceChildren();
   text("hover", "");
   $("emptyChart").hidden = !!d;
-  plotted = d ? StockCSV.aggregate(d.candles, $("interval").value) : [];
+  plotted = d ? (d.liveCandles || StockCSV.aggregate(d.candles, $("interval").value)) : [];
   if (!d) {
     text("activeSymbol", "ยังไม่ได้เลือกหุ้น");
     text("price", "—");
@@ -329,7 +329,9 @@ async function refreshLive(symbol) {
   if (!datasets[symbol] || datasets[symbol].source !== StockMarket.SOURCE) return;
   try {
     const updated = await StockMarket.search(symbol);
-    saveData({ ...datasets, [symbol]: updated });
+    const live = await fetch("/api/market?symbol=" + encodeURIComponent(symbol) + "&mode=intraday", {cache:"no-store"}).then(r => r.ok ? r.json() : null);
+    const liveCandles = live?.intraday && Array.isArray(live.candles) ? live.candles : null;
+    saveData({ ...datasets, [symbol]: liveCandles ? {...updated, liveCandles} : updated });
     if (selected === symbol) refresh();
   } catch (error) {
     text("marketStatus", "อัปเดตล่าสุดไม่ได้: " + error.message + " · จะแสดงข้อมูลเดิม");

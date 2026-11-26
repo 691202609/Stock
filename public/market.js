@@ -41,6 +41,24 @@ async function fetchDaily(ticker,fetcher=fetch){
  throw Object.assign(Error(lastError),{status: lastError.includes('429') ? 429 : 502});
 }
 
+async function fetchIntraday(ticker,fetcher=fetch){
+ ticker=symbol(ticker);
+ const url=new URL('https://query1.finance.yahoo.com/v8/finance/chart/'+encodeURIComponent(ticker));
+ url.search=new URLSearchParams({interval:'5m',range:'5d',includePrePost:'false'});
+ const response=await fetcher(url.toString(),{cache:'no-store',redirect:'error',signal:AbortSignal.timeout(10000),headers:{Accept:'application/json','User-Agent':'Mozilla/5.0'}}).catch(()=>null);
+ if(!response)throw Error('เชื่อมต่อ Yahoo Finance ไม่ได้');
+ if(!response.ok)throw Object.assign(Error('Yahoo Finance ตอบ HTTP '+response.status),{status:response.status===429?429:502});
+ const result=(await response.json())?.chart?.result?.[0], quote=result?.indicators?.quote?.[0], meta=result?.meta;
+ if(!result||!quote||!Array.isArray(result.timestamp))throw Error('Yahoo Finance ไม่มีข้อมูลระหว่างวันของหุ้นนี้');
+ const candles=[];
+ for(const [i,time] of result.timestamp.entries()){
+  const [open,high,low,close]=['open','high','low','close'].map(k=>quote[k]?.[i]);
+  if([time,open,high,low,close].every(Number.isFinite))candles.push({time,open,high,low,close,volume:Number.isFinite(quote.volume?.[i])?quote.volume[i]:0});
+ }
+ if(!candles.length)throw Error('ยังไม่มีข้อมูลระหว่างวันของหุ้นนี้');
+ return {symbol:ticker,currency:String(meta?.currency||'USD').toUpperCase(),candles,source:SOURCE,fetchedAt:new Date().toISOString(),intraday:true,latest:Number.isFinite(meta?.regularMarketPrice)&&Number.isFinite(meta?.regularMarketTime)?{price:meta.regularMarketPrice,marketTime:meta.regularMarketTime}:null};
+}
+
 async function search(ticker,fetcher=fetch){
  ticker=symbol(ticker);
  const response=await fetcher('/api/market?symbol='+encodeURIComponent(ticker),{cache:'no-store',signal:AbortSignal.timeout(30000)});
@@ -51,6 +69,6 @@ async function search(ticker,fetcher=fetch){
  return {...data,candles};
 }
 
-const api={SOURCE,symbol,parse,fetchDaily,search};
+const api={SOURCE,symbol,parse,fetchDaily,fetchIntraday,search};
 if(typeof module!=='undefined')module.exports=api;else root.StockMarket=api;
 })(globalThis);
