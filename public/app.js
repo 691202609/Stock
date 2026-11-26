@@ -321,21 +321,23 @@ function render() {
   draw();
   if (liveTimer) clearTimeout(liveTimer);
   liveTimer = d.source === StockMarket.SOURCE
-    ? setTimeout(() => refreshLive(d.symbol), 60000)
+    ? setTimeout(() => refreshLive(d.symbol), 30000)
     : null;
 }
 
 async function refreshLive(symbol) {
   if (!datasets[symbol] || datasets[symbol].source !== StockMarket.SOURCE) return;
   try {
+    text("marketStatus", "กำลังอัปเดตกราฟ " + symbol + "…");
     const updated = await StockMarket.search(symbol);
     const live = await fetch("/api/market?symbol=" + encodeURIComponent(symbol) + "&mode=intraday", {cache:"no-store"}).then(r => r.ok ? r.json() : null);
     const liveCandles = live?.intraday && Array.isArray(live.candles) ? live.candles : null;
     saveData({ ...datasets, [symbol]: liveCandles ? {...updated, liveCandles} : updated });
+    text("marketStatus", liveCandles ? "กราฟอัปเดตแล้ว · แท่ง 5 นาที · Yahoo Finance อาจล่าช้า" : "ตลาดอาจปิดอยู่ · แสดงราคาล่าสุดจาก Yahoo Finance");
     if (selected === symbol) refresh();
   } catch (error) {
     text("marketStatus", "อัปเดตล่าสุดไม่ได้: " + error.message + " · จะแสดงข้อมูลเดิม");
-    liveTimer = setTimeout(() => refreshLive(symbol), 60000);
+    liveTimer = setTimeout(() => refreshLive(symbol), 30000);
   }
 }
 function draw() {
