@@ -476,12 +476,17 @@ function scan() {
         cell.className = change >= 0 ? "up" : "down";
       tr.append(cell);
     }
+    const action = document.createElement("td");
+    const deleteButton = button("ลบข้อมูล", () => remove(s));
+    deleteButton.className = "danger-button";
+    action.append(deleteButton);
+    tr.append(action);
     rows.append(tr);
   }
   if (!rows.children.length) {
     const tr = document.createElement("tr"),
       td = document.createElement("td");
-    td.colSpan = 5;
+    td.colSpan = 6;
     td.textContent = "ไม่มีข้อมูลตรงเงื่อนไข";
     tr.append(td);
     rows.append(tr);
