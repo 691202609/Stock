@@ -1,6 +1,9 @@
 "use strict";
 const $ = (id) => document.getElementById(id),
-  text = (id, v) => ($(id).textContent = v),
+  text = (id, v) => {
+    const node = $(id);
+    if (node) node.textContent = v;
+  },
   fmt = (n) =>
     Number.isFinite(n)
       ? n.toLocaleString("en-US", { maximumFractionDigits: 4 })
